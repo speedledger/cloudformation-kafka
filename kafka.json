@@ -47,6 +47,10 @@
       "Description" : "Existing security group that should be granted administrative access to ZooKeeper (e.g., 'sg-123456')",
       "Type" : "AWS::EC2::SecurityGroup::Id"
     },
+    "ZookeeperClientSecurityGroup" : {
+      "Description" : "Existing security group that grants zookeeper-access",
+      "Type" : "AWS::EC2::SecurityGroup::Id"
+    },
     "AvailabilityZones": {
       "Description" : "(Optional) If passed, only launch nodes in these AZs (e.g., 'us-east-1a,us-east-1b'). Note: these must match up with the passed Subnets.",
       "Type" : "CommaDelimitedList",
@@ -187,7 +191,7 @@
       "Properties" : {
         "KeyName" : { "Ref" : "KeyName" },
         "ImageId" : { "Fn::FindInMap" : [ "RegionMap", { "Ref" : "AWS::Region" }, "AMI"] },
-        "SecurityGroups" : [ { "Ref" : "ServerSecurityGroup" }, { "Ref" : "AdminSecurityGroup" }  ],
+        "SecurityGroups" : [ { "Ref" : "ServerSecurityGroup" }, { "Ref" : "AdminSecurityGroup" }, { "Ref" : "ZookeeperClientSecurityGroup" } ],
         "AssociatePublicIpAddress": "true",
         "InstanceType" : { "Ref" : "InstanceType" },
         "UserData"       : { "Fn::Base64" : { "Fn::Join" : ["", [
@@ -200,11 +204,16 @@
           "  exit 1\n",
           "}\n",
 
+          "# Upgrade docker\n",
+          "export DEBIAN_FRONTEND=noninteractive\n",
+          "sudo -E apt-get update\n",
+          "sudo -E apt-get upgrade -y lxc-docker\n",
+
           "curl -s http://stedolan.github.io/jq/download/linux64/jq > jq\n",
           "chmod +x jq\n",
 
           "# Set up kafka connection using exhibitor data\n",
-          "export EX_DATA=`curl -s ", {"Ref": "ExhibitorLoadBalancer"}, "/exhibitor/v1/cluster/list`\n",
+          "export EX_DATA=`curl -s ", {"Ref": "ExhibitorLoadBalancer"}, "`\n",
           "export ZK_PORT=`echo $EX_DATA | ./jq -r '.port'`\n",
           "export ZK_HOSTS=`echo $EX_DATA | ./jq -r '.servers | join(\",\")'`:$ZK_PORT\n",
           "export ZK_CONNECT=$ZK_HOSTS", {"Ref": "KafkaChroot"} , "\n",
@@ -233,7 +242,7 @@
       "Properties" : {
           "KeyName" : { "Ref" : "KeyName" },
           "ImageId" : { "Fn::FindInMap" : [ "RegionMap", { "Ref" : "AWS::Region" }, "AMI"] },
-          "SecurityGroups" : [ { "Ref" : "ServerSecurityGroup" }, { "Ref" : "AdminSecurityGroup" }  ],
+          "SecurityGroups" : [ { "Ref" : "ServerSecurityGroup" }, { "Ref" : "AdminSecurityGroup" }, { "Ref" : "ZookeeperClientSecurityGroup" } ],
           "AssociatePublicIpAddress": "true",
           "InstanceType" : {"Ref": "ManagerInstanceType"},
           "UserData"       : { "Fn::Base64" : { "Fn::Join" : ["", [
@@ -246,11 +255,16 @@
             "  exit 1\n",
             "}\n",
 
+            "# Upgrade docker\n",
+            "export DEBIAN_FRONTEND=noninteractive\n",
+            "sudo -E apt-get update\n",
+            "sudo -E apt-get upgrade -y lxc-docker\n",
+
             "curl -s http://stedolan.github.io/jq/download/linux64/jq > jq\n",
             "chmod +x jq\n",
 
             "# Set up kafka connection using exhibitor data\n",
-            "export EX_DATA=`curl -s ", {"Ref": "ExhibitorLoadBalancer"}, "/exhibitor/v1/cluster/list`\n",
+            "export EX_DATA=`curl -s ", {"Ref": "ExhibitorLoadBalancer"}, "`\n",
             "export ZK_PORT=`echo $EX_DATA | ./jq '.port'`\n",
             "export ZK_HOSTS=`echo $EX_DATA | ./jq '.servers | join(\",\")'`:$ZK_PORT\n",
             "export ZK_CONNECT=$ZK_HOSTS", {"Ref": "KafkaChroot"} , "\n",
