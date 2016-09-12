@@ -5,10 +5,10 @@ TEMPLATE_URL:=file://kafka.json
 ZOOKEEPER_STACK_NAME:=$(ENVIRONMENT)-zookeeper
 
 AWS_REGION?=eu-west-1
-ADMIN_GROUP?=sg-b5a0aed2
-KEY_NAME?=internal
-SUBNETS?=subnet-c59b309d
-VPC_ID?=vpc-461a9422
+ADMIN_GROUP?=sg-ee98ea89
+KEY_NAME?=test
+SUBNETS?=subnet-14935e4c
+VPC_ID?=vpc-75fd5c11
 ZOOKEEPER_CLIENT_SECURITY_GROUP?=$(shell aws --region $(AWS_REGION) cloudformation describe-stacks --stack-name $(ZOOKEEPER_STACK_NAME) 2>/dev/null | jq -r '.Stacks[].Outputs | map(select(.OutputKey == "ClientSecurityGroup"))[].OutputValue')
 EXHIBITOR_URL?=$(shell aws --region $(AWS_REGION) cloudformation describe-stacks --stack-name $(ZOOKEEPER_STACK_NAME) 2>/dev/null | jq -r '.Stacks[].Outputs | map(select(.OutputKey == "ExhibitorDiscoveryUrl"))[].OutputValue')
 
