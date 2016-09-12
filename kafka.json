@@ -89,6 +89,25 @@
         "hs1.8xlarge", "g2.2xlarge"
       ],
       "ConstraintDescription" : "must be a valid, HVM-compatible EC2 instance type."
+    },
+    "RegistratorDockerImage": {
+      "Description" : "Docker image to use for registrator",
+      "Type" : "String",
+      "Default" : "gliderlabs/registrator:v7"
+    },
+    "ConsulDockerImage": {
+      "Description" : "Docker image to use for consul agent",
+      "Type" : "String",
+      "Default" : "consul:v0.6.4"
+    },
+    "ConsulServer": {
+      "Description" : "Consul server address to connect agent to",
+      "Type" : "String"
+    },
+    "ServiceName": {
+      "Description" : "Service name in consul",
+      "Type" : "String",
+      "default" : "kafka2"
     }
   },
 
@@ -222,12 +241,36 @@
           "# Set up and start the Kafka service\n",
           "sudo docker pull ", { "Ref": "DockerImage" }, "\n",
           "runit-service create kafka docker run -p 9092:9092",
+          " -e SERVICE_NAME=", { "Ref" : "ServiceName" },
           " -e KAFKA_BROKER_ID=${IP##*.}",
           " -e KAFKA_ADVERTISED_PORT=9092",
           " -e KAFKA_ZOOKEEPER_CONNECT=$ZK_CONNECT",
           " -e \"KAFKA_ADVERTISED_HOST_NAME=`ec2metadata --local-hostname`\"",
           " ", { "Ref": "DockerImage" }, "\n",
           "runit-service enable kafka\n",
+
+          "# Set up and start the Consul Agent\n",
+          "sudo docker pull ", { "Ref": "ConsulDockerImage" }, "\n",
+          "runit-service create consul docker run ",
+          "   -p 8300:8300",
+          "   -p 8301:8301",
+          "   -p 8301:8301/udp",
+          "   -p 8302:8302",
+          "   -p 8302:8302/udp",
+          "   -p 8400:8400",
+          "   -p 8500:8500",
+          "   ", { "Ref": "ConsulDockerImage" },
+          "   agent -join=", { "Ref" : "ConsulServer" }, " -advertise=`hostname -i` -dc=", { "Ref" : "AWS::Region" }, " -client=0.0.0.0\n",
+          "runit-service enable consul\n",
+
+          "# Set up and start the Registrator\n",
+          "sudo docker pull ", { "Ref": "RegistratorDockerImage" }, "\n",
+          "runit-service create registrator docker run ",
+          "   --net=host",
+          "   --volume=/var/run/docker.sock:/tmp/docker.sock",
+          "   ", { "Ref": "RegistratorDockerImage" },
+          "   consul://localhost:8500\n",
+          "runit-service enable registrator\n",
 
           "# All is well so signal success\n",
           "cfn-signal -e 0 -r \"Stack setup complete\" '", { "Ref" : "WaitHandle" }, "'\n",
