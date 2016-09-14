@@ -107,7 +107,20 @@
     "ServiceName": {
       "Description" : "Service name in consul",
       "Type" : "String",
-      "default" : "kafka2"
+      "Default" : "kafka2"
+    },
+    "SysdigAgentContainer": {
+      "Description" : "Sysdig cloud agent docker container name",
+      "Type" : "String",
+      "Default" : "sysdig/agent"
+    },
+    "SysdigAgentAccessKey": {
+      "Description" : "Sysdig cloud agent access key",
+      "Type" : "String"
+    },
+    "Environment": {
+      "Description" : "Environment for stack",
+      "Type" : "String"
     }
   },
 
@@ -201,7 +214,15 @@
             "Value" : "Kafka",
             "PropagateAtLaunch" : "true"
           }
-        ]
+        ],
+      },
+      "UpdatePolicy": {
+        "AutoScalingRollingUpdate": {
+          "MaxBatchSize": "1",
+          "MinInstancesInService": "2",
+          "PauseTime": "PT20M",
+          "WaitOnResourceSignals": true
+        }
       }
     },
 
@@ -271,6 +292,24 @@
           "   ", { "Ref": "RegistratorDockerImage" },
           "   consul://localhost:8500\n",
           "runit-service enable registrator\n",
+
+          "# Setup Sysdig cloud agent\n",
+          "sudo docker pull ", { "Ref": "SysdigAgentContainer" }, "\n",
+          "runit-service create sysdigcloudagent docker run ",
+          "   --net=host",
+          "   --name=sysdigagent",
+          "   --privileged",
+          "   --pid host",
+          "   -e ACCESS_KEY=", { "Ref" : "SysdigAgentAccessKey" },
+          "   -e TAGS=environment:", { "Ref" : "Environment" }, ",Name:kafka",
+          "   --volume=/var/run/docker.sock:/host/var/run/docker.sock",
+          "   --volume=/dev:/host/dev",
+          "   --volume=/proc:/host/proc:ro",
+          "   --volume=/boot:/host/boot:ro",
+          "   --volume=/lib/modules:/host/lib/modules:ro",
+          "   --volume=/usr:/host/usr:ro",
+          "   ", { "Ref": "SysdigAgentContainer" }, "\n",
+          "runit-service enable sysdigcloudagent\n",
 
           "# All is well so signal success\n",
           "cfn-signal -e 0 -r \"Stack setup complete\" '", { "Ref" : "WaitHandle" }, "'\n",
