@@ -8,7 +8,6 @@
     "InstanceType" : {
       "Description" : "EC2 instance type",
       "Type" : "String",
-      "Default" : "m3.large",
       "AllowedValues" : [
         "t2.micro", "t2.small", "t2.medium",
         "m3.medium", "m3.large", "m3.xlarge", "m3.2xlarge",
@@ -216,11 +215,16 @@
           }
         ],
       },
+      "CreationPolicy" : {
+        "ResourceSignal" : {
+          "Timeout" : "PT15M"
+        }
+      },
       "UpdatePolicy": {
         "AutoScalingRollingUpdate": {
           "MaxBatchSize": "1",
           "MinInstancesInService": "2",
-          "PauseTime": "PT20M",
+          "PauseTime": "PT15M",
           "WaitOnResourceSignals": true
         }
       }
@@ -313,6 +317,8 @@
 
           "# All is well so signal success\n",
           "cfn-signal -e 0 -r \"Stack setup complete\" '", { "Ref" : "WaitHandle" }, "'\n",
+
+          "cfn-signal -e 0 --region ", {"Ref": "AWS::Region"}, " --stack ", {"Ref": "AWS::StackName"}, " --resource ServerGroup", "\n",
 
           "#EOF"
         ]]}}
