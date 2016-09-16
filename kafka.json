@@ -26,7 +26,7 @@
     "ClusterSize" : {
       "Description" : "Number of nodes to launch",
       "Type" : "Number",
-      "Default": 2
+      "Default": 3
     },
     "DockerImage" : {
       "Description" : "Path of the Kafka Docker image (format: '[<registry>[:<port>]/]<repository>:<version>')",
@@ -83,7 +83,7 @@
     "ServiceName": {
       "Description" : "Service name in consul",
       "Type" : "String",
-      "Default" : "kafka2"
+      "Default" : "kafka"
     },
     "SysdigAgentContainer": {
       "Description" : "Sysdig cloud agent docker container name",
@@ -101,6 +101,11 @@
     "AmiId": {
       "Description" : "Ami ID to use for server instances",
       "Type" : "String"
+    },
+    "KafkaDefaultTopicReplicationFactor": {
+      "Description" : "Default topic replication factory",
+      "Type" : "Number",
+      "Default" : 2
     }
   },
 
@@ -205,11 +210,13 @@
           "# Set up and start the Kafka service\n",
           "sudo docker pull ", { "Ref": "DockerImage" }, "\n",
           "runit-service create kafka docker run -p 9092:9092",
+          " --name kafka",
           " -e SERVICE_NAME=", { "Ref" : "ServiceName" },
           " -e KAFKA_BROKER_ID=${IP##*.}",
           " -e KAFKA_ADVERTISED_PORT=9092",
-          " -e KAFKA_ZOOKEEPER_CONNECT=zookeeper.service.internal:2181",
-          " -e \"KAFKA_ADVERTISED_HOST_NAME=`ec2metadata --local-hostname`\"",
+          " -e KAFKA_ZOOKEEPER_CONNECT=zookeeper.service.internal:2181/kafka",
+          " -e KAFKA_ADVERTISED_HOST_NAME=${IP}",
+          " -e KAFKA_DEFAULT_REPLICATION_FACTOR=", { "Ref" : "KafkaDefaultTopicReplicationFactor" },
           " ", { "Ref": "DockerImage" }, "\n",
           "runit-service enable kafka\n",
 
@@ -263,7 +270,8 @@
             "# Set up and start the Kafka Manager service\n",
             "sudo docker pull ", { "Ref": "DockerImage" }, "\n",
             "runit-service create kafkamanager docker run -p 9000:9000",
-            " -e KAFKA_ZOOKEEPER_CONNECT=zookeeper.service.internal:2181",
+            " -e KAFKA_ZOOKEEPER_CONNECT=zookeeper.service.internal:2181/kafka",
+            " -e ZK_HOSTS=zookeeper.service.internal:2181/kafka",
             " ", { "Ref": "ManagerDockerImage" }, "\n",
             "runit-service enable kafkamanager\n",
 
