@@ -18,7 +18,7 @@ TOPIC_REPLICATION_FACTOR=2
 PARAMETERS:=ParameterKey=AdminSecurityGroup,ParameterValue=$(ADMIN_GROUP) \
             ParameterKey=ZookeeperClientSecurityGroup,ParameterValue=$(ZOOKEEPER_CLIENT_SECURITY_GROUP) \
             ParameterKey=KeyName,ParameterValue=$(KEY_NAME) \
-            ParameterKey=Subnets,ParameterValue=$(SUBNETS) \
+						'ParameterKey=Subnets,ParameterValue="$(SUBNETS)"' \
             ParameterKey=VpcId,ParameterValue=$(VPC_ID) \
 						ParameterKey=SysdigAgentAccessKey,ParameterValue=$(SYSDIG_ACCESS_KEY) \
 						ParameterKey=Environment,ParameterValue=$(ENVIRONMENT) \

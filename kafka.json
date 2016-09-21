@@ -139,6 +139,10 @@
             "Key": "Name",
             "Value" : "Kafka Manager",
             "PropagateAtLaunch" : "true"
+          },
+          {
+            "Key" : "Stack",
+            "Value" : { "Ref" : "Environment" }
           }
         ]
       }
@@ -169,6 +173,10 @@
             "Key": "Name",
             "Value" : "Kafka",
             "PropagateAtLaunch" : "true"
+          },
+          {
+            "Key" : "Stack",
+            "Value" : { "Ref" : "Environment" }
           }
         ],
       },
