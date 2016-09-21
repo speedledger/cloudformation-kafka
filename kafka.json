@@ -117,7 +117,8 @@
           },
           {
             "Key" : "Stack",
-            "Value" : { "Ref" : "Environment" }
+            "Value" : { "Ref" : "Environment" },
+            "PropagateAtLaunch" : "true"
           }
         ],
       },
