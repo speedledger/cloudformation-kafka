@@ -55,31 +55,6 @@
       "Type" : "CommaDelimitedList",
       "Default" : ""
     },
-    "ManagerDockerImage": {
-        "Type": "String",
-        "Description": "Docker image running kafka manager.",
-        "Default": "sheepkiller/kafka-manager"
-    },
-    "ManagerClusterSize" : {
-      "Description" : "Number of kafka manager nodes to launch",
-      "Type" : "Number",
-      "Default": 1
-    },
-    "ManagerInstanceType" : {
-      "Description" : "Kafka Manager EC2 instance type",
-      "Type" : "String",
-      "Default" : "t2.micro",
-      "AllowedValues" : [
-        "t2.micro", "t2.small", "t2.medium",
-        "m3.medium", "m3.large", "m3.xlarge", "m3.2xlarge",
-        "c4.large", "c4.xlarge", "c4.2xlarge", "c4.4xlarge", "c4.8xlarge",
-        "c3.large", "c3.xlarge", "c3.2xlarge", "c3.4xlarge", "c3.8xlarge",
-        "r3.large", "r3.xlarge", "r3.2xlarge", "r3.4xlarge", "r3.8xlarge",
-        "i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge",
-        "hs1.8xlarge", "g2.2xlarge"
-      ],
-      "ConstraintDescription" : "must be a valid, HVM-compatible EC2 instance type."
-    },
     "ServiceName": {
       "Description" : "Service name in consul",
       "Type" : "String",
@@ -114,40 +89,6 @@
   },
 
   "Resources" : {
-    "ManagerServerGroup" : {
-      "Type" : "AWS::AutoScaling::AutoScalingGroup",
-      "Properties" : {
-        "AvailabilityZones" : {
-          "Fn::If" : [
-            "UseAllAvailabilityZones",
-            { "Fn::GetAZs": "AWS::Region" },
-            { "Ref" : "AvailabilityZones" }
-          ]
-        },
-        "LaunchConfigurationName" : { "Ref" : "KafkaManagerLaunchConfig" },
-        "MinSize" : "1",
-        "MaxSize" : "1",
-        "DesiredCapacity" : {"Ref": "ManagerClusterSize"},
-        "VPCZoneIdentifier" : { "Ref" : "Subnets" },
-        "Tags" : [
-          {
-            "Key" : "role",
-            "Value" : "kafka-manager",
-            "PropagateAtLaunch" : "true"
-          },
-          {
-            "Key": "Name",
-            "Value" : "Kafka Manager",
-            "PropagateAtLaunch" : "true"
-          },
-          {
-            "Key" : "Stack",
-            "Value" : { "Ref" : "Environment" }
-          }
-        ]
-      }
-    },
-
     "ServerGroup" : {
       "Type" : "AWS::AutoScaling::AutoScalingGroup",
       "Properties" : {
@@ -254,40 +195,6 @@
 
           "#EOF"
         ]]}}
-      }
-    },
-
-    "KafkaManagerLaunchConfig": {
-      "Type": "AWS::AutoScaling::LaunchConfiguration",
-      "Properties" : {
-          "KeyName" : { "Ref" : "KeyName" },
-          "ImageId" : { "Ref" : "AmiId" },
-          "SecurityGroups" : [ { "Ref" : "ServerSecurityGroup" }, { "Ref" : "AdminSecurityGroup" }, { "Ref" : "ZookeeperClientSecurityGroup" } ],
-          "AssociatePublicIpAddress": "true",
-          "InstanceType" : {"Ref": "ManagerInstanceType"},
-          "UserData"       : { "Fn::Base64" : { "Fn::Join" : ["", [
-            "#!/bin/bash -ex\n",
-
-            "# Helper function\n",
-            "function error_exit\n",
-            "{\n",
-            "  cfn-signal -e 1 -r \"$1\" '", { "Ref" : "WaitHandle" }, "'\n",
-            "  exit 1\n",
-            "}\n",
-
-            "# Set up and start the Kafka Manager service\n",
-            "sudo docker pull ", { "Ref": "DockerImage" }, "\n",
-            "runit-service create kafkamanager docker run -p 9000:9000",
-            " -e KAFKA_ZOOKEEPER_CONNECT=zookeeper.service.internal:2181/kafka",
-            " -e ZK_HOSTS=zookeeper.service.internal:2181/kafka",
-            " ", { "Ref": "ManagerDockerImage" }, "\n",
-            "runit-service enable kafkamanager\n",
-
-            "# All is well so signal success\n",
-            "cfn-signal -e 0 -r \"Stack setup complete\" '", { "Ref" : "WaitHandle" }, "'\n",
-
-            "#EOF"
-          ]]}}
       }
     },
 
