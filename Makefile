@@ -10,7 +10,7 @@ KEY_NAME?=test
 SUBNETS?=subnet-14935e4c
 VPC_ID?=vpc-75fd5c11
 ZOOKEEPER_CLIENT_SECURITY_GROUP?=$(shell aws --region $(AWS_REGION) cloudformation describe-stacks --stack-name $(ZOOKEEPER_STACK_NAME) 2>/dev/null | jq -r '.Stacks[].Outputs | map(select(.OutputKey == "ClientSecurityGroup"))[].OutputValue')
-SYSDIG_ACCESS_KEY?=741fe1c0-b2f2-4d03-825b-b48c01e0c562
+SYSDIG_ACCESS_KEY?=
 INSTANCE_TYPE?=m4.large
 AMI_ID=ami-f585fc86
 TOPIC_REPLICATION_FACTOR=2
