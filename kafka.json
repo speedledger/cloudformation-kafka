@@ -31,7 +31,7 @@
     "DockerImage" : {
       "Description" : "Path of the Kafka Docker image (format: '[<registry>[:<port>]/]<repository>:<version>')",
       "Type" : "String",
-      "Default" : "wurstmeister/kafka:latest"
+      "Default" : "wurstmeister/kafka:0.10.0.1"
     },
 
     "Subnets" : {
@@ -182,25 +182,6 @@
           " -e KAFKA_DEFAULT_REPLICATION_FACTOR=", { "Ref" : "KafkaDefaultTopicReplicationFactor" },
           " ", { "Ref": "DockerImage" }, "\n",
           "runit-service enable kafka\n",
-
-
-          "# Setup Sysdig cloud agent\n",
-          "sudo docker pull ", { "Ref": "SysdigAgentContainer" }, "\n",
-          "runit-service create sysdigcloudagent docker run ",
-          "   --net=host",
-          "   --name=sysdigagent",
-          "   --privileged",
-          "   --pid host",
-          "   -e ACCESS_KEY=", { "Ref" : "SysdigAgentAccessKey" },
-          "   -e TAGS=environment:", { "Ref" : "Environment" }, ",Name:kafka",
-          "   --volume=/var/run/docker.sock:/host/var/run/docker.sock",
-          "   --volume=/dev:/host/dev",
-          "   --volume=/proc:/host/proc:ro",
-          "   --volume=/boot:/host/boot:ro",
-          "   --volume=/lib/modules:/host/lib/modules:ro",
-          "   --volume=/usr:/host/usr:ro",
-          "   ", { "Ref": "SysdigAgentContainer" }, "\n",
-          "runit-service enable sysdigcloudagent\n",
 
           "# All is well so signal success\n",
           "cfn-signal -e 0 -r \"Stack setup complete\" '", { "Ref" : "WaitHandle" }, "'\n",
